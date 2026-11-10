@@ -1,30 +1,15 @@
 # Architecture
 
-## Purpose
+The library has three independent parts: recording, synthesis, and serving.
 
-`github.com/Trysac/u255-traffic-mock-recorder` is a small, dependency-free Go library: Record outbound HTTP traffic through a Go RoundTripper with redaction and caps, infer path templates from what was seen and serve the result as a mock http.Handler
+1. **Recorder** — `NewRecorder(Options)` returns a mutex-protected `*Recorder`. `RoundTripper(next http.RoundTripper) http.RoundTripper` wraps `next`; a nil `next` uses `http.DefaultTransport`. For each exchange it reads request and response bodies up to `MaxBodyBytes+1` bytes and hands the same bytes back through an `io.MultiReader` of the buffered prefix and the remaining body, closing the original body. A body over the cap is not stored and sets `Truncated`. Request headers are never stored. Response headers `Set-Cookie`, `WWW-Authenticate`, and `Proxy-Authenticate` are dropped. Query redaction splits the raw query on `&`; a pair whose unescaped name is in `RedactQuery` becomes `name=REDACTED`; pairs without `=` are kept. `MaxExchanges` is a ring: the oldest exchange is dropped and counted by `Dropped()`. `Exchanges()` returns a copy oldest first. A transport error from `next` is returned unchanged and nothing is recorded.
 
-## Shape
+2. **Synthesize** — a pure function `Synthesize([]Exchange) []Stub` that skips truncated exchanges and groups the rest by `(Method, Template)`. A path segment made only of ASCII digits becomes `{int}`; a canonical UUID (8-4-4-4-12 hex, any case) becomes `{uuid}`; other segments stay literal. In each group the exchange with the highest `Seq` supplies `Status`, `ContentType`, and `Body`; `Hits` counts the group. Stubs are sorted by method then template.
 
-```text
-caller code --> package trafficmockrecorder (repository root)
-                    |
-                    +-- pure functions, no I/O, no global mutable state
-                    +-- internal/ (optional private helpers)
-```
+3. **NewMockHandler** — `NewMockHandler([]Stub) http.Handler` matches an incoming request path against stubs, ignoring the query string. A stub matches when every segment matches; `{int}` and `{uuid}` segments match their segment kinds. When several stubs match, the one with more literal segments wins; ties go to slice order. If none matches, the handler returns status 501 with `Content-Type: application/json` and a body `{"error":"no stub","method":"<METHOD>","path":"<PATH>"}`.
 
-- **Public API**: every exported identifier of the root package. Unexported identifiers and
-  `internal/` packages may change without a major version.
-- **Errors**: invalid input returns an error; exported sentinel errors (such as `ErrBlank`) let
-  callers branch with `errors.Is`. The library never panics on input, prints or exits.
-- **Side effects**: none. If a feature needs I/O, accept an interface (`io.Reader` or a small
-  custom one) instead of opening resources, and record the choice in an ADR.
-
-## Quality contract
-
-`scripts/check` is the single definition of the gates; `fabrica.json` tells the factory and CI
-how to run it. See [TESTING.md](TESTING.md).
-
-## Decisions
-
-Architecture decisions are recorded in [decisions/](decisions/) as numbered ADRs.
+Design decisions:
+- Recording, synthesis, and serving are independent; callers can use any combination.
+- `MaxExchanges` and `MaxBodyBytes` bound memory; defaults are 1000 and 1,048,576 bytes when zero.
+- No global state; options are per-recorder.
+- Standard library only.
