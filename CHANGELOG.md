@@ -9,4 +9,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added traffic-mock-recorder library: records outbound HTTP traffic with redaction and caps, synthesizes templated stubs, and serves them as an http.Handler.
 - Initial project structure from the factory utility template.

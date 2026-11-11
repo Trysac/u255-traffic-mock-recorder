@@ -1,16 +1,15 @@
 # traffic-mock-recorder
 
-> Record outbound HTTP traffic through a Go RoundTripper with redaction and caps, infer path templates from what was seen and serve the result as a mock http.Handler Go module `github.com/Trysac/u255-traffic-mock-recorder`, package `trafficmockrecorder`, MIT licensed,
-> Go >= 1.23, standard library only.
+> Record outbound HTTP traffic through a Go RoundTripper with redaction and caps, infer path templates from what was seen, and serve the result as a mock http.Handler. Go module `github.com/Trysac/u255-traffic-mock-recorder`, package `trafficmockrecorder`, MIT licensed, Go >= 1.23, standard library only.
 
 ## Docs
 
-- [README](README.md): problem, install, usage example
-- [AGENTS](AGENTS.md): commands, folder map, conventions, limits
-- [Architecture](docs/ARCHITECTURE.md): shape of the package and its public API
-- [Testing](docs/TESTING.md): how to run and extend the tests
+- [README](README.md): problem, installation, usage example, public API
+- [Architecture](docs/ARCHITECTURE.md): recorder, synthesis, and mock handler
+- [Testing](docs/TESTING.md): tests and commands
+- [Security](docs/SECURITY.md): threat model and limits
+- [Project](docs/PROJECT.md): objective, scope, and out-of-scope
 
 ## Optional
 
-- [Stack](docs/STACK.md): tools used and discarded
-- [Changelog](CHANGELOG.md): release history
+- [Stack](docs/STACK.md): Go version and standard-library packages
